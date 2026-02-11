@@ -63,7 +63,7 @@ main() {
 
         let replyBytes = Array<UInt8>(Int64(response.size), repeat: 0)
         let replyRaw = acquireArrayRawData(replyBytes)
-        let err = memcpy_s(replyRaw.pointer, response.size, response.data, response.size)
+        let err = memcpy_s(replyRaw.pointer, IntNative(replyRaw.array.size), response.data, response.size)
         releaseArrayRawData(replyRaw)
         cj_js_free(response)
 

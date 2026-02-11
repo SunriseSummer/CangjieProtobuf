@@ -6,6 +6,7 @@
 #include <cstring>
 #include <memory>
 #include <mutex>
+#include <new>
 #include <string>
 #include <vector>
 
@@ -27,16 +28,18 @@ napi_ref g_handler_ref = nullptr;
 uv_loop_t g_loop;
 bool g_initialized = false;
 
-std::string EscapeScriptPath(const std::string& path) {
-    std::string escaped;
-    escaped.reserve(path.size());
-    for (char ch : path) {
-        if (ch == '\\' || ch == '\'') {
-            escaped.push_back('\\');
-        }
-        escaped.push_back(ch);
+bool IsSafeScriptPath(const std::string& path) {
+    if (path.empty()) {
+        return false;
     }
-    return escaped;
+    if (path.find("..") != std::string::npos) {
+        return false;
+    }
+    if (path.find('\n') != std::string::npos || path.find('\r') != std::string::npos ||
+        path.find('\0') != std::string::npos) {
+        return false;
+    }
+    return true;
 }
 
 bool LoadHandler() {
@@ -65,7 +68,11 @@ extern "C" bool cj_js_init() {
     }
 
     const char* script_env = std::getenv("CJ_JS_ENTRY");
-    std::string script_path = script_env && script_env[0] ? script_env : "./js/interop.js";
+    std::string script_path = "./js/interop.js";
+    if (script_env && IsSafeScriptPath(script_env)) {
+        script_path = script_env;
+    }
+    uv_os_setenv("CJ_JS_ENTRY", script_path.c_str());
     std::vector<std::string> args = {"node", script_path};
     std::vector<std::string> exec_args;
     std::vector<std::string> errors;
@@ -92,7 +99,7 @@ extern "C" bool cj_js_init() {
         g_env = node::GetCurrentEnvironment(context)->GetNapiEnv();
 
         const std::string bootstrap =
-            "globalThis.__cj_handle = require('" + EscapeScriptPath(script_path) + "').handleMessage;";
+            "globalThis.__cj_handle = require(process.env.CJ_JS_ENTRY || './js/interop.js').handleMessage;";
         node::LoadEnvironment(g_node_env, bootstrap.c_str());
 
         if (!LoadHandler()) {
@@ -156,7 +163,7 @@ extern "C" JsBuffer cj_js_call(const uint8_t* data, size_t size) {
         return output;
     }
 
-    output.data = static_cast<uint8_t*>(std::malloc(result_size));
+    output.data = new (std::nothrow) uint8_t[result_size];
     if (output.data == nullptr) {
         napi_close_handle_scope(g_env, scope);
         return output;
@@ -170,7 +177,7 @@ extern "C" JsBuffer cj_js_call(const uint8_t* data, size_t size) {
 }
 
 extern "C" void cj_js_free(JsBuffer buffer) {
-    std::free(buffer.data);
+    delete[] buffer.data;
 }
 
 extern "C" void cj_js_shutdown() {
