@@ -1,0 +1,15 @@
+[dependencies]
+  protobuf = { path = "../../src/protobuf" }
+
+[package]
+  cjc-version = "1.0.0"
+  name = "cj_js_interop"
+  version = "0.1.0"
+  description = "Cangjie + Node.js protobuf interop example"
+  output-type = "executable"
+  src-dir = "src"
+  target-dir = "target"
+  link-option = "-L../native/build -lcj_node_bridge"
+  compile-option = ""
+  override-compile-option = ""
+  package-configuration = {}
