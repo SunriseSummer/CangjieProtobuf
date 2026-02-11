@@ -2,6 +2,7 @@
 #include <node.h>
 #include <uv.h>
 
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -35,18 +36,40 @@ bool IsValidScriptPath(const std::string& path) {
     if (path.empty()) {
         return false;
     }
-    if (path.find("..") != std::string::npos) {
-        return false;
-    }
     if (path.find('\n') != std::string::npos || path.find('\r') != std::string::npos ||
         path.find('\0') != std::string::npos) {
         return false;
     }
-    if (path.size() < 3 || path.substr(path.size() - 3) != ".js") {
+    if (path.find("..") != std::string::npos) {
+        return false;
+    }
+    const std::filesystem::path input(path);
+    if (input.extension() != ".js") {
         return false;
     }
     std::error_code error;
-    return std::filesystem::is_regular_file(path, error);
+    const auto canonical = std::filesystem::weakly_canonical(input, error);
+    if (error || !std::filesystem::is_regular_file(canonical, error)) {
+        return false;
+    }
+    const auto base = std::filesystem::weakly_canonical(std::filesystem::current_path(), error);
+    if (error) {
+        return false;
+    }
+    const auto mismatch_pair = std::mismatch(base.begin(), base.end(), canonical.begin());
+    return mismatch_pair.first == base.end();
+}
+
+std::string EscapeScriptPath(const std::string& path) {
+    std::string escaped;
+    escaped.reserve(path.size());
+    for (char ch : path) {
+        if (ch == '\\' || ch == '\'') {
+            escaped.push_back('\\');
+        }
+        escaped.push_back(ch);
+    }
+    return escaped;
 }
 
 bool LoadHandler() {
@@ -80,7 +103,6 @@ extern "C" bool cj_js_init() {
         script_path = script_env;
     } else if (script_env) {
         std::fprintf(stderr, "CJ_JS_ENTRY is invalid; falling back to %s\n", kDefaultScriptPath);
-        uv_os_unsetenv("CJ_JS_ENTRY");
     }
     std::vector<std::string> args = {"node", script_path};
     std::vector<std::string> exec_args;
@@ -108,8 +130,8 @@ extern "C" bool cj_js_init() {
         g_env = node::GetCurrentEnvironment(context)->GetNapiEnv();
 
         const std::string bootstrap =
-            "globalThis.__cj_handle = require(process.env.CJ_JS_ENTRY || '" +
-            std::string(kDefaultScriptPath) + "').handleMessage;";
+            "globalThis.__cj_handle = require('" + EscapeScriptPath(script_path) +
+            "').handleMessage;";
         node::LoadEnvironment(g_node_env, bootstrap.c_str());
 
         if (!LoadHandler()) {
