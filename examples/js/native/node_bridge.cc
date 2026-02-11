@@ -31,8 +31,8 @@ std::string EscapeScriptPath(const std::string& path) {
     std::string escaped;
     escaped.reserve(path.size());
     for (char ch : path) {
-        if (ch == '\\\\' || ch == '\'') {
-            escaped.push_back('\\\\');
+        if (ch == '\\' || ch == '\'') {
+            escaped.push_back('\\');
         }
         escaped.push_back(ch);
     }
@@ -157,10 +157,13 @@ extern "C" JsBuffer cj_js_call(const uint8_t* data, size_t size) {
     }
 
     output.data = static_cast<uint8_t*>(std::malloc(result_size));
-    if (output.data != nullptr) {
-        std::memcpy(output.data, result_data, result_size);
-        output.size = result_size;
+    if (output.data == nullptr) {
+        napi_close_handle_scope(g_env, scope);
+        return output;
     }
+
+    std::memcpy(output.data, result_data, result_size);
+    output.size = result_size;
 
     napi_close_handle_scope(g_env, scope);
     return output;
@@ -197,7 +200,10 @@ extern "C" void cj_js_shutdown() {
         g_allocator = nullptr;
     }
 
-    uv_loop_close(&g_loop);
+    if (uv_loop_close(&g_loop) != 0) {
+        uv_run(&g_loop, UV_RUN_NOWAIT);
+        uv_loop_close(&g_loop);
+    }
     v8::V8::Dispose();
     v8::V8::ShutdownPlatform();
     g_platform.reset();

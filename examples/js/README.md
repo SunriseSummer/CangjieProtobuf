@@ -44,6 +44,7 @@ cmake --build build
 ```
 
 > `NODE_DIR` 需指向包含 `include/node` 的目录，`NODE_LIBRARY` 需指向 `libnode`。
+> Cangjie 工程默认链接 `../native/build`，请保持输出目录为 `native/build`。
 
 ### 3. 构建仓颉示例
 

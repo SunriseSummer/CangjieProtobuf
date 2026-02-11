@@ -15,7 +15,8 @@ function handleMessage(buffer) {
     defaults: true,
   });
 
-  const replyItems = obj.items && obj.items.length > 0 ? obj.items : [obj.primaryItem].filter(Boolean);
+  const replyItems =
+    obj.items && obj.items.length > 0 ? obj.items : obj.primaryItem ? [obj.primaryItem] : [];
   const average = replyItems.length
     ? replyItems.reduce((sum, item) => sum + item.price, 0) / replyItems.length
     : 0;
