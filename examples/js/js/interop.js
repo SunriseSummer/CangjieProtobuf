@@ -15,8 +15,12 @@ function handleMessage(buffer) {
     defaults: true,
   });
 
-  const replyItems =
-    obj.items && obj.items.length > 0 ? obj.items : obj.primaryItem ? [obj.primaryItem] : [];
+  let replyItems = [];
+  if (obj.items && obj.items.length > 0) {
+    replyItems = obj.items;
+  } else if (obj.primaryItem) {
+    replyItems = [obj.primaryItem];
+  }
   const average = replyItems.length
     ? replyItems.reduce((sum, item) => sum + item.price, 0) / replyItems.length
     : 0;

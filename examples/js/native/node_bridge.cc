@@ -4,6 +4,7 @@
 
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <memory>
 #include <mutex>
 #include <new>
@@ -28,7 +29,7 @@ napi_ref g_handler_ref = nullptr;
 uv_loop_t g_loop;
 bool g_initialized = false;
 
-bool IsSafeScriptPath(const std::string& path) {
+bool IsValidScriptPath(const std::string& path) {
     if (path.empty()) {
         return false;
     }
@@ -39,7 +40,11 @@ bool IsSafeScriptPath(const std::string& path) {
         path.find('\0') != std::string::npos) {
         return false;
     }
-    return true;
+    if (path.size() < 3 || path.substr(path.size() - 3) != ".js") {
+        return false;
+    }
+    std::error_code error;
+    return std::filesystem::is_regular_file(path, error);
 }
 
 bool LoadHandler() {
@@ -69,10 +74,11 @@ extern "C" bool cj_js_init() {
 
     const char* script_env = std::getenv("CJ_JS_ENTRY");
     std::string script_path = "./js/interop.js";
-    if (script_env && IsSafeScriptPath(script_env)) {
+    if (script_env && IsValidScriptPath(script_env)) {
         script_path = script_env;
+    } else if (script_env) {
+        uv_os_unsetenv("CJ_JS_ENTRY");
     }
-    uv_os_setenv("CJ_JS_ENTRY", script_path.c_str());
     std::vector<std::string> args = {"node", script_path};
     std::vector<std::string> exec_args;
     std::vector<std::string> errors;
