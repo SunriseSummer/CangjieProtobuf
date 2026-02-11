@@ -1,0 +1,14 @@
+[dependencies]
+  protobuf = { path = "../protobuf"}
+[package]
+  cjc-version = "1.0.0"
+  compile-option = ""
+  description = "google.protobuf cj translation"
+  link-option = ""
+  name = "google"
+  output-type = "static"
+  override-compile-option = "-O2"
+  src-dir = ""
+  target-dir = "../../target"
+  version = "1.0.2"
+  package-configuration = {}

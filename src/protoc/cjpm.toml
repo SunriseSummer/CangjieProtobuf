@@ -1,0 +1,15 @@
+[dependencies]
+  protobuf = { path = "../protobuf"}
+  google = { path = "../google"}
+[package]
+  cjc-version = "1.0.0"
+  description = "protobuf cj plugin"
+  link-option = ""
+  name = "protoc"
+  output-type = "executable"
+  compile-option = ""
+  override-compile-option = "-O2"
+  src-dir = ""
+  target-dir = "../../target"
+  version = "1.0.2"
+  package-configuration = {}

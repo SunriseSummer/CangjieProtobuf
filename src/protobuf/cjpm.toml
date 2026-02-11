@@ -1,0 +1,14 @@
+[dependencies]
+
+[package]
+  cjc-version = "1.0.0"
+  compile-option = ""
+  description = "protobuf cj toolkit"
+  link-option = ""
+  name = "protobuf"
+  output-type = "static"
+  override-compile-option = "-O2 --int-overflow=wrapping"
+  src-dir = ""
+  target-dir = "../../target"
+  version = "1.0.2"
+  package-configuration = {}
