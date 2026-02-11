@@ -27,6 +27,18 @@ napi_ref g_handler_ref = nullptr;
 uv_loop_t g_loop;
 bool g_initialized = false;
 
+std::string EscapeScriptPath(const std::string& path) {
+    std::string escaped;
+    escaped.reserve(path.size());
+    for (char ch : path) {
+        if (ch == '\\\\' || ch == '\'') {
+            escaped.push_back('\\\\');
+        }
+        escaped.push_back(ch);
+    }
+    return escaped;
+}
+
 bool LoadHandler() {
     napi_value global;
     if (napi_get_global(g_env, &global) != napi_ok) {
@@ -52,7 +64,9 @@ extern "C" bool cj_js_init() {
         return true;
     }
 
-    std::vector<std::string> args = {"node", "./js/interop.js"};
+    const char* script_env = std::getenv("CJ_JS_ENTRY");
+    std::string script_path = script_env && script_env[0] ? script_env : "./js/interop.js";
+    std::vector<std::string> args = {"node", script_path};
     std::vector<std::string> exec_args;
     std::vector<std::string> errors;
 
@@ -78,7 +92,7 @@ extern "C" bool cj_js_init() {
         g_env = node::GetCurrentEnvironment(context)->GetNapiEnv();
 
         const std::string bootstrap =
-            "globalThis.__cj_handle = require('./js/interop.js').handleMessage;";
+            "globalThis.__cj_handle = require('" + EscapeScriptPath(script_path) + "').handleMessage;";
         node::LoadEnvironment(g_node_env, bootstrap.c_str());
 
         if (!LoadHandler()) {

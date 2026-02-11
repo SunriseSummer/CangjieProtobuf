@@ -54,7 +54,7 @@ cjpm build
 
 ## 运行示例
 
-请确保运行路径为 `examples/js` 目录，以便桥接层正确加载 JS 脚本。
+默认会从运行目录下的 `./js/interop.js` 加载脚本，也可通过环境变量 `CJ_JS_ENTRY` 指定绝对路径。
 
 ```bash
 cd examples/js
