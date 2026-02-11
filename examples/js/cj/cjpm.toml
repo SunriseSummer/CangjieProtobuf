@@ -9,6 +9,7 @@
   output-type = "executable"
   src-dir = "src"
   target-dir = "target"
+  # expects libcj_node_bridge to be built in ../native/build
   link-option = "-L../native/build -lcj_node_bridge"
   compile-option = ""
   override-compile-option = ""

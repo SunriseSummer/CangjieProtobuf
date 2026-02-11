@@ -2,6 +2,7 @@
 #include <node.h>
 #include <uv.h>
 
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
@@ -28,6 +29,7 @@ napi_env g_env = nullptr;
 napi_ref g_handler_ref = nullptr;
 uv_loop_t g_loop;
 bool g_initialized = false;
+constexpr const char* kDefaultScriptPath = "./js/interop.js";
 
 bool IsValidScriptPath(const std::string& path) {
     if (path.empty()) {
@@ -73,10 +75,11 @@ extern "C" bool cj_js_init() {
     }
 
     const char* script_env = std::getenv("CJ_JS_ENTRY");
-    std::string script_path = "./js/interop.js";
+    std::string script_path = kDefaultScriptPath;
     if (script_env && IsValidScriptPath(script_env)) {
         script_path = script_env;
     } else if (script_env) {
+        std::fprintf(stderr, "CJ_JS_ENTRY is invalid; falling back to %s\n", kDefaultScriptPath);
         uv_os_unsetenv("CJ_JS_ENTRY");
     }
     std::vector<std::string> args = {"node", script_path};
@@ -105,7 +108,8 @@ extern "C" bool cj_js_init() {
         g_env = node::GetCurrentEnvironment(context)->GetNapiEnv();
 
         const std::string bootstrap =
-            "globalThis.__cj_handle = require(process.env.CJ_JS_ENTRY || './js/interop.js').handleMessage;";
+            "globalThis.__cj_handle = require(process.env.CJ_JS_ENTRY || '" +
+            std::string(kDefaultScriptPath) + "').handleMessage;";
         node::LoadEnvironment(g_node_env, bootstrap.c_str());
 
         if (!LoadHandler()) {
