@@ -110,9 +110,9 @@ extern "C" bool cj_js_init() {
     std::vector<std::string> exec_args;
 
     g_platform = node::MultiIsolatePlatform::Create(4);
+    v8::V8::InitializePlatform(g_platform.get());
     g_init_result = node::InitializeOncePerProcess(
         args, {node::ProcessInitializationFlags::kNoInitializeV8});
-    v8::V8::InitializePlatform(g_platform.get());
     v8::V8::Initialize();
 
     uv_loop_init(&g_loop);
