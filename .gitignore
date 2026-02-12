@@ -25,3 +25,4 @@ ci_test
 test
 build-script-cache
 tmp/
+node_modules/

@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package interop;
+
+message Address {
+  string street = 1;
+  string city = 2;
+  int32 zip = 3;
+}
+
+message Item {
+  int32 id = 1;
+  string name = 2;
+  float price = 3;
+  bool available = 4;
+}
+
+message CjRequest {
+  int32 request_id = 1;
+  string title = 2;
+  bool enabled = 3;
+  int64 timestamp = 4;
+  double ratio = 5;
+  bytes raw = 6;
+  repeated int32 scores = 7;
+  repeated string tags = 8;
+  repeated Address addresses = 9;
+  Item primary_item = 10;
+  repeated Item items = 11;
+}
+
+message JsReply {
+  string status = 1;
+  repeated Item items = 2;
+  Address default_address = 3;
+  repeated bytes payloads = 4;
+  float average = 5;
+}

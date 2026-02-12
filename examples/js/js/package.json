@@ -1,0 +1,16 @@
+{
+  "name": "cj-js-interop-example",
+  "version": "1.0.0",
+  "description": "Cangjie <-> Node.js protobuf interop example",
+  "main": "interop.js",
+  "scripts": {
+    "start": "node interop.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "protobufjs": "^8.0.0"
+  }
+}

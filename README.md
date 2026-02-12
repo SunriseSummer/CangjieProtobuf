@@ -108,6 +108,8 @@ main() {
 
 ```
 
+更多跨语言互操作示例见 `examples/js`（仓颉作为宿主，N-API 调用 Node.js）。
+
 ### 使用说明
 
 - `src/protoc`模块会生成一个二进制`protoc` 此exe实际名称应为`protoc-gen-cj` 但`protoc-gen-cj`不能作为输出名称
