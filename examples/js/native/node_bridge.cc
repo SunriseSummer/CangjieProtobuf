@@ -23,8 +23,10 @@ struct JsBuffer {
 namespace {
 std::mutex g_lock;
 std::shared_ptr<node::MultiIsolatePlatform> g_platform;
+std::shared_ptr<node::InitializationResult> g_init_result;
 node::Environment* g_node_env = nullptr;
 v8::Isolate* g_isolate = nullptr;
+node::IsolateData* g_isolate_data = nullptr;
 v8::ArrayBuffer::Allocator* g_allocator = nullptr;
 napi_env g_env = nullptr;
 napi_ref g_handler_ref = nullptr;
@@ -106,12 +108,12 @@ extern "C" bool cj_js_init() {
     }
     std::vector<std::string> args = {"node", script_path};
     std::vector<std::string> exec_args;
-    std::vector<std::string> errors;
 
     g_platform = node::MultiIsolatePlatform::Create(4);
+    g_init_result = node::InitializeOncePerProcess(
+        args, {node::ProcessInitializationFlags::kNoInitializeV8});
     v8::V8::InitializePlatform(g_platform.get());
     v8::V8::Initialize();
-    node::InitializeOncePerProcess(args, exec_args);
 
     uv_loop_init(&g_loop);
 
@@ -126,7 +128,8 @@ extern "C" bool cj_js_init() {
         v8::Local<v8::Context> context = node::NewContext(g_isolate);
         v8::Context::Scope context_scope(context);
 
-        g_node_env = node::CreateEnvironment(g_isolate, context, args, exec_args, false);
+        g_isolate_data = node::CreateIsolateData(g_isolate, &g_loop, g_platform.get());
+        g_node_env = node::CreateEnvironment(g_isolate_data, context, args, exec_args);
         g_env = node::GetCurrentEnvironment(context)->GetNapiEnv();
 
         const std::string bootstrap =
@@ -225,8 +228,13 @@ extern "C" void cj_js_shutdown() {
 
     if (g_node_env != nullptr) {
         node::EmitExit(g_node_env);
-        node::CleanupEnvironment(g_node_env);
+        node::FreeEnvironment(g_node_env);
         g_node_env = nullptr;
+    }
+
+    if (g_isolate_data != nullptr) {
+        node::FreeIsolateData(g_isolate_data);
+        g_isolate_data = nullptr;
     }
 
     if (g_isolate != nullptr) {
@@ -244,7 +252,8 @@ extern "C" void cj_js_shutdown() {
         uv_loop_close(&g_loop);
     }
     v8::V8::Dispose();
-    v8::V8::ShutdownPlatform();
+    v8::V8::DisposePlatform();
     g_platform.reset();
+    g_init_result.reset();
     g_initialized = false;
 }
